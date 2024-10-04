@@ -19,7 +19,7 @@ def format_response(status_value, message, data=None):
     }
 
 
-# Doctor Registration View
+# 1- Doctor Registration View
 class DoctorCreateView(APIView):
     @swagger_auto_schema(request_body=DoctorSerializer)
     def post(self, request):
@@ -32,7 +32,7 @@ class DoctorCreateView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-# Doctor Login View based on job_id
+# 2- Doctor Login View based on job_id
 class DoctorLoginView(APIView):
     @swagger_auto_schema(
         manual_parameters=[openapi.Parameter('job_id', openapi.IN_QUERY, description="Doctor's job ID", type=openapi.TYPE_STRING)]
@@ -50,7 +50,7 @@ class DoctorLoginView(APIView):
             return Response(format_response(False, "Doctor with job_id not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# Kid Registration View
+# 3- Kid Registration View
 class KidCreateView(APIView):
     @swagger_auto_schema(request_body=KidSerializer)
     def post(self, request):
@@ -63,7 +63,7 @@ class KidCreateView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-# Kid Login View based on k_id (kid's ID)
+# 4- Kid Login View based on k_id (kid's ID)
 class KidLoginView(APIView):
     @swagger_auto_schema(
         manual_parameters=[openapi.Parameter('k_id', openapi.IN_QUERY, description="Kid's ID", type=openapi.TYPE_STRING)]
@@ -82,7 +82,7 @@ class KidLoginView(APIView):
 
 
 # Doctor Views:
-# List all kids assigned to the doctor based on job_id
+# 5- List all kids assigned to the doctor based on job_id
 class DoctorKidsListView(APIView):
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -108,7 +108,7 @@ class DoctorKidsListView(APIView):
             return Response(format_response(False, "Doctor with job_id not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# List all weeks for a specific kid
+# 6- List all weeks for a specific kid
 class KidWeekListView(APIView):
     @swagger_auto_schema(manual_parameters=[openapi.Parameter('kid_id', openapi.IN_QUERY, description="Kid's ID", type=openapi.TYPE_INTEGER)])
     def get(self, request, kid_id):
@@ -121,7 +121,7 @@ class KidWeekListView(APIView):
             return Response(format_response(False, "Kid not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# Media Upload View
+# 7- Media Upload View
 class MediaUploadView(APIView):
     @swagger_auto_schema(
         request_body=MediaUploadSerializer,
@@ -147,7 +147,7 @@ class MediaUploadView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-# Save Media URL to Database
+# 8- Save Media URL to Database
 class MediaSaveView(APIView):
     @swagger_auto_schema(
         request_body=MediaSaveSerializer,
@@ -162,7 +162,7 @@ class MediaSaveView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-# Voice Recording Upload View
+# 9- Voice Recording Upload View
 class KidVoiceRecordingUploadView(APIView):
     @swagger_auto_schema(
         request_body=KidVoiceRecordingUploadSerializer,
@@ -187,7 +187,7 @@ class KidVoiceRecordingUploadView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-# Save Voice Recording URL to Database
+# 10- Save Voice Recording URL to Database
 class KidVoiceRecordingSaveView(APIView):
     @swagger_auto_schema(
         request_body=KidVoiceRecordingSaveSerializer,
@@ -202,7 +202,7 @@ class KidVoiceRecordingSaveView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-# Doctor gives feedback on kid's voice recordings
+# 11- Doctor gives feedback on kid's voice recordings
 class DoctorFeedbackCreateView(APIView):
     @swagger_auto_schema(request_body=FeedbackSerializer)
     def post(self, request, voice_id):
@@ -230,7 +230,7 @@ class DoctorFeedbackCreateView(APIView):
             return Response(format_response(False, "Voice recording not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# Doctor gets voice records uploaded by the kid using week_id
+# 12- Doctor gets voice records uploaded by the kid using week_id
 class DoctorVoiceRecordsListView(APIView):
     @swagger_auto_schema(
         manual_parameters=[openapi.Parameter('week_id', openapi.IN_QUERY, description="Week ID", type=openapi.TYPE_INTEGER)]
@@ -250,7 +250,7 @@ class DoctorVoiceRecordsListView(APIView):
             return Response(format_response(False, "Week with id not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# Kid gets pictures and videos uploaded by the doctor using week_id
+# 13- Kid gets pictures and videos uploaded by the doctor using week_id
 class KidMediaListView(APIView):
     @swagger_auto_schema(
         manual_parameters=[openapi.Parameter('week_id', openapi.IN_QUERY, description="Week ID", type=openapi.TYPE_INTEGER)]
@@ -270,7 +270,7 @@ class KidMediaListView(APIView):
             return Response(format_response(False, "Week with id not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# List all doctors for kid registration
+# 14- List all doctors for kid registration
 class DoctorListView(APIView):
     @swagger_auto_schema(
         operation_description="Retrieve a list of doctors",
@@ -286,7 +286,7 @@ class DoctorListView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-# List of the voices feedbacks
+# 15- List of the voices feedbacks
 class KidFeedbackListView(APIView):
     @swagger_auto_schema(responses={200: FeedbackSerializer(many=True)})
     def get(self, request, kid_id):
@@ -309,3 +309,39 @@ class KidFeedbackListView(APIView):
         else:
             return Response(format_response(False, "No feedback found for this kid."),
                             status=status.HTTP_404_NOT_FOUND)
+
+
+# 16- Doctor Profile Edit View
+class DoctorProfileEditView(APIView):
+    @swagger_auto_schema(request_body=DoctorSerializer)
+    def put(self, request, job_id):
+        try:
+            doctor = Doctor.objects.get(job_id=job_id)
+        except Doctor.DoesNotExist:
+            return Response(format_response(False, "Doctor not found."), status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DoctorSerializer(doctor, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(format_response(True, "Doctor profile updated successfully.", serializer.data),
+                            status=status.HTTP_200_OK)
+        return Response(format_response(False, "Error updating profile.", serializer.errors),
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
+# 17- Kid Profile Edit View
+class KidProfileEditView(APIView):
+    @swagger_auto_schema(request_body=KidSerializer)
+    def put(self, request, k_id):
+        try:
+            kid = Kid.objects.get(k_id=k_id)
+        except Kid.DoesNotExist:
+            return Response(format_response(False, "Kid not found."), status=status.HTTP_404_NOT_FOUND)
+
+        serializer = KidSerializer(kid, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(format_response(True, "Kid profile updated successfully.", serializer.data),
+                            status=status.HTTP_200_OK)
+        return Response(format_response(False, "Error updating profile.", serializer.errors),
+                        status=status.HTTP_400_BAD_REQUEST)
