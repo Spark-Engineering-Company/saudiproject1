@@ -17,7 +17,7 @@ class KidSerializer(serializers.ModelSerializer):
 class WeekSerializer(serializers.ModelSerializer):
     class Meta:
         model = Week
-        fields = ['kid', 'week_number']
+        fields = '__all__'
 
 
 class MediaUploadSerializer(serializers.ModelSerializer):
@@ -38,10 +38,17 @@ class KidVoiceRecordingUploadSerializer(serializers.ModelSerializer):
         fields = ['file']
 
 
+class KidVoiceRecordingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KidVoiceRecording
+        fields = ['week', 'file', 'url', 'feedback_state', 'media_type']  # Added media_type here
+
+
 class KidVoiceRecordingSaveSerializer(serializers.ModelSerializer):
     class Meta:
         model = KidVoiceRecording
-        fields = ['week', 'url']
+        fields = ['week', 'file', 'url', 'media_type', 'feedback_state']
+        read_only_fields = ['feedback_state']  # feedback_state should be read-only and default to False
 
 
 class FeedbackSerializer(serializers.ModelSerializer):

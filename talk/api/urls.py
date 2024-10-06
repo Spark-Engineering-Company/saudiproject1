@@ -17,7 +17,6 @@ schema_view = get_schema_view(
    ),
    public=True,
    permission_classes=(permissions.AllowAny,),  # Disable auth for the Swagger view
-
 )
 
 urlpatterns = [
@@ -41,16 +40,15 @@ urlpatterns = [
 
     # Profile Editing
     # ---------------
-    path('doctor/<str:job_id>/edit/', DoctorProfileEditView.as_view(), name='doctor_profile_edit'),
+    path('doctor/edit/<str:job_id>', DoctorProfileEditView.as_view(), name='doctor_profile_edit'),
     # Edit doctor profile by job_id
-    path('kid/<str:k_id>/edit/', KidProfileEditView.as_view(), name='kid_profile_edit'),
-    # Edit kid profile by k_id
+    path('kid/edit/<str:k_id>', KidProfileEditView.as_view(), name='kid_profile_edit'),  # Fixed typo
 
     # Doctor-Kid Interaction
     # ----------------------
     path('doctor/kids/', DoctorKidsListView.as_view(), name='doctor_kids_list'),
     # List all kids assigned to a specific doctor
-    path('kid/<int:kid_id>/weeks/', KidWeekListView.as_view(), name='kid_week_list'),
+    path('kid/weeks/<int:kid_id>', KidWeekListView.as_view(), name='kid_week_list'),
     # List all weeks for a specific kid
 
     # Media Upload & Management
@@ -69,9 +67,9 @@ urlpatterns = [
 
     # Doctor Feedback
     # ---------------
-    path('voice/<int:voice_id>/feedback/', DoctorFeedbackCreateView.as_view(), name='doctor_feedback'),
+    path('voice/feedback/<int:voice_id>', DoctorFeedbackCreateView.as_view(), name='doctor_feedback'),
     # Doctor adds feedback for kid's voice recording
-    path('kid/<int:kid_id>/feedback/', KidFeedbackListView.as_view(), name='kid_feedback_list'),
+    path('kid/feedback/<int:kid_id>', KidFeedbackListView.as_view(), name='kid_feedback_list'),
     # List all feedback for a specific kid's voice recordings
 
     # Doctor View Kid's Voice Records and Media

@@ -56,13 +56,19 @@ class Media(models.Model):
 
 # Voice recordings from the kid to the doctor
 class KidVoiceRecording(models.Model):
+    MEDIA_TYPE_CHOICES = [
+        ('pictures', 'Pictures'),
+        ('video', 'Video'),
+    ]
+
     week = models.ForeignKey(Week, related_name="voice_recordings", on_delete=models.CASCADE)
     file = models.FileField(upload_to="voice/")
     url = models.CharField(max_length=300, blank=True, null=True)
     feedback_state = models.BooleanField(default=False)
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default='pictures')  # New field to track media type
 
     def __str__(self):
-        return f"Voice recording for {self.week}"
+        return f"Voice recording for {self.week} ({self.media_type})"
 
 
 # Feedback from doctor to the kid
