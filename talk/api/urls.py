@@ -1,86 +1,32 @@
 from django.urls import path
-from rest_framework import permissions
 from .views import *
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-
-
-# Swagger Schema View
-schema_view = get_schema_view(
-   openapi.Info(
-      title="Kid & Doctor API",
-      default_version='v1',
-      description="API for managing doctors, kids, media, and voice recordings.",
-      terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@yourapi.local"),
-      license=openapi.License(name="BSD License"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),  # Disable auth for the Swagger view
-)
 
 urlpatterns = [
-    # Swagger URLs
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('swagger.json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('doctor/register/', DoctorCreateView.as_view(), name='doctor-register'),
+    path('doctor/login/', DoctorLoginView.as_view(), name='doctor-login'),
+    path('kid/register/', KidCreateView.as_view(), name='kid-register'),
+    path('kid/login/', KidLoginView.as_view(), name='kid-login'),
+    path('doctor/kids/', DoctorKidsListView.as_view(), name='doctor-kids-list'),
+    path('kid/<int:kid_id>/weeks/', KidWeekListView.as_view(), name='kid-week-list'),
 
-    # Doctor Account Management
-    # -------------------------
-    path('doctor/register/', DoctorCreateView.as_view(), name='doctor_register'),
-    # Doctor registration with job_id
-    path('doctor/login/', DoctorLoginView.as_view(), name='doctor_login'),
-    # Doctor login with job_id
+    # New endpoints for pictures and video uploads and saves
+    path('media/pictures/upload/<int:week_id>/', PicturesUploadView.as_view(), name='pictures-upload'),
+    path('media/video/upload/<int:week_id>/', VideoUploadView.as_view(), name='video-upload'),
+    path('media/pictures/save/', PicturesSaveView.as_view(), name='pictures-save'),
+    path('media/video/save/', VideoSaveView.as_view(), name='video-save'),
 
-    # Kid Account Management
-    # ----------------------
-    path('kid/register/', KidCreateView.as_view(), name='kid_register'),
-    # Kid registration
-    path('kid/login/', KidLoginView.as_view(), name='kid_login'),
-    # Kid login with k_id
+    path('voice/upload/', KidVoiceRecordingUploadView.as_view(), name='voice-upload'),
+    path('voice/save/', KidVoiceRecordingSaveView.as_view(), name='voice-save'),
 
-    # Profile Editing
-    # ---------------
-    path('doctor/edit/<str:job_id>', DoctorProfileEditView.as_view(), name='doctor_profile_edit'),
-    # Edit doctor profile by job_id
-    path('kid/edit/<str:k_id>', KidProfileEditView.as_view(), name='kid_profile_edit'),  # Fixed typo
+    path('feedback/create/<int:voice_id>/', DoctorFeedbackCreateView.as_view(), name='doctor-feedback-create'),
 
-    # Doctor-Kid Interaction
-    # ----------------------
-    path('doctor/kids/', DoctorKidsListView.as_view(), name='doctor_kids_list'),
-    # List all kids assigned to a specific doctor
-    path('kid/weeks/<int:kid_id>', KidWeekListView.as_view(), name='kid_week_list'),
-    # List all weeks for a specific kid
+    # Updated endpoint for doctor to view voice recordings by week_id in URL
+    path('doctor/voice-records/<int:week_id>/', DoctorVoiceRecordsListView.as_view(), name='doctor-voice-records'),
 
-    # Media Upload & Management
-    # -------------------------
-    path('media/upload/', MediaUploadView.as_view(), name='media_upload'),
-    # Media file upload
-    path('media/save/', MediaSaveView.as_view(), name='media_save'),
-    # Save uploaded media URL to database
+    path('media/list/<int:week_id>/', KidMediaListView.as_view(), name='kid-media-list'),
+    path('doctors/', DoctorListView.as_view(), name='doctor-list'),
+    path('feedback/kid/<int:kid_id>/', KidFeedbackListView.as_view(), name='kid-feedback-list'),
 
-    # Voice Recording Upload & Management
-    # -----------------------------------
-    path('voice/upload/', KidVoiceRecordingUploadView.as_view(), name='voice_recording_upload'),
-    # Kid uploads voice recording
-    path('voice/save/', KidVoiceRecordingSaveView.as_view(), name='voice_recording_save'),
-    # Save voice recording URL to database
-
-    # Doctor Feedback
-    # ---------------
-    path('voice/feedback/<int:voice_id>', DoctorFeedbackCreateView.as_view(), name='doctor_feedback'),
-    # Doctor adds feedback for kid's voice recording
-    path('kid/feedback/<int:kid_id>', KidFeedbackListView.as_view(), name='kid_feedback_list'),
-    # List all feedback for a specific kid's voice recordings
-
-    # Doctor View Kid's Voice Records and Media
-    # -----------------------------------------
-    path('doctor/voice-records/', DoctorVoiceRecordsListView.as_view(), name='doctor_voice_records_list'),
-    # List voice recordings submitted by kid for a specific week
-    path('kid/media/', KidMediaListView.as_view(), name='kid_media_list'),
-    # Kid views media files uploaded by doctor for a specific week
-
-    # General List Views
-    # ------------------
-    path('doctors/', DoctorListView.as_view(), name='doctor_list'),
-    # List all doctors for kid registration
+    path('doctor/profile/<int:job_id>/edit/', DoctorProfileEditView.as_view(), name='doctor-profile-edit'),
+    path('kid/profile/<int:k_id>/edit/', KidProfileEditView.as_view(), name='kid-profile-edit'),
 ]

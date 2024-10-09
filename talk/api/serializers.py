@@ -5,7 +5,7 @@ from .models import Doctor, Kid, Week, Media, KidVoiceRecording, Feedback
 class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
-        fields = ['job_id', 'phone', 'email', 'dob', 'full_name']
+        fields = '__all__'
 
 
 class KidSerializer(serializers.ModelSerializer):

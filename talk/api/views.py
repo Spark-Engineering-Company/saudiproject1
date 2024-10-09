@@ -129,87 +129,124 @@ class KidWeekListView(APIView):
             return Response(format_response(False, "Kid not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# 7- Media Upload View
-class MediaUploadView(APIView):
+# 7- Pictures Upload
+class PicturesUploadView(APIView):
     @swagger_auto_schema(
         request_body=MediaUploadSerializer,
-        responses={200: openapi.Response('Media uploaded successfully')}
+        responses={200: openapi.Response('Pictures uploaded successfully')}
     )
-    def post(self, request):
-        week_id = request.data.get('week_id')
-        media_files = request.FILES.getlist('file')
+    def post(self, request, week_id):
+        pictures = request.FILES.getlist('file')
 
-        if not week_id:
-            return Response(format_response(False, "week_id is required."), status=status.HTTP_400_BAD_REQUEST)
+        if len(pictures) != 4 or not all([file.name.endswith(('jpg', 'jpeg', 'png')) for file in pictures]):
+            return Response(format_response(False, "You must upload exactly 4 pictures."),
+                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             week = Week.objects.get(id=week_id)
-
-            # Validate the number of files: either 4 pictures or 1 video
-            if len(media_files) == 4 and all([file.name.endswith(('jpg', 'jpeg', 'png')) for file in media_files]):
-                media_type = 'pictures'
-            elif len(media_files) == 1 and media_files[0].name.endswith(('mp4', 'avi', 'mov')):
-                media_type = 'video'
-            else:
-                return Response(format_response(False, "You must upload either 4 pictures or 1 video."),
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            # Delete existing media if any
             delete_existing_media(week)
 
-            # Save new media files
-            for media_file in media_files:
-                file_path = os.path.join(settings.MEDIA_ROOT, media_file.name)
+            urls = []
+            for picture in pictures:
+                file_path = os.path.join(settings.MEDIA_ROOT, picture.name)
                 with open(file_path, 'wb+') as destination:
-                    for chunk in media_file.chunks():
+                    for chunk in picture.chunks():
                         destination.write(chunk)
 
-                # Generate URL for each file
-                url = request.scheme + '://' + request.get_host() + settings.MEDIA_URL + media_file.name
+                url = request.scheme + '://' + request.get_host() + settings.MEDIA_URL + picture.name
+                Media.objects.create(week=week, file=picture, url=url)
+                urls.append(url)
 
-                # Save each media file in the database
-                Media.objects.create(week=week, file=media_file, url=url)
-
-            return Response(format_response(True, f"{media_type.capitalize()} uploaded successfully."),
+            return Response(format_response(True, "Pictures uploaded successfully.", {"urls": urls}),
                             status=status.HTTP_200_OK)
 
         except Week.DoesNotExist:
             return Response(format_response(False, "Week with id not found."), status=status.HTTP_404_NOT_FOUND)
 
 
-# 8- Save Media URL to Database
-class MediaSaveView(APIView):
+class PicturesSaveView(APIView):
     @swagger_auto_schema(
         request_body=MediaSaveSerializer,
-        responses={200: openapi.Response('Media saved successfully')}
+        responses={200: openapi.Response('Pictures saved successfully')}
     )
     def post(self, request):
         week_id = request.data.get('week')
         urls = request.data.getlist('url')
 
-        if not week_id:
-            return Response(format_response(False, "week_id is required."), status=status.HTTP_400_BAD_REQUEST)
+        if len(urls) != 4 or not all([url.endswith(('jpg', 'jpeg', 'png')) for url in urls]):
+            return Response(format_response(False, "You must provide exactly 4 picture URLs."),
+                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             week = Week.objects.get(id=week_id)
-
-            # Validate the number of URLs: either 4 picture URLs or 1 video URL
-            if len(urls) == 4 and all([url.endswith(('jpg', 'jpeg', 'png')) for url in urls]):
-                media_type = 'pictures'
-            elif len(urls) == 1 and urls[0].endswith(('mp4', 'avi', 'mov')):
-                media_type = 'video'
-            else:
-                return Response(format_response(False, "You must provide either 4 picture URLs or 1 video URL."),
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            # Delete existing media if any
+            # Delete any existing pictures for this week
             delete_existing_media(week)
 
-            # Save new media URLs
+            # Save new picture URLs
             for url in urls:
                 Media.objects.create(week=week, url=url)
 
-            return Response(format_response(True, f"{media_type.capitalize()} saved successfully."),
+            return Response(format_response(True, "Pictures saved successfully."),
+                            status=status.HTTP_201_CREATED)
+
+        except Week.DoesNotExist:
+            return Response(format_response(False, "Week with id not found."), status=status.HTTP_404_NOT_FOUND)
+
+
+# 8- Video Upload
+class VideoUploadView(APIView):
+    @swagger_auto_schema(
+        request_body=MediaUploadSerializer,
+        responses={200: openapi.Response('Video uploaded successfully')}
+    )
+    def post(self, request, week_id):
+        video = request.FILES.get('file')
+
+        if not video or not video.name.endswith(('mp4', 'avi', 'mov')):
+            return Response(format_response(False, "You must upload exactly 1 video file."),
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            week = Week.objects.get(id=week_id)
+            delete_existing_media(week)
+
+            file_path = os.path.join(settings.MEDIA_ROOT, video.name)
+            with open(file_path, 'wb+') as destination:
+                for chunk in video.chunks():
+                    destination.write(chunk)
+
+            url = request.scheme + '://' + request.get_host() + settings.MEDIA_URL + video.name
+            Media.objects.create(week=week, file=video, url=url)
+
+            return Response(format_response(True, "Video uploaded successfully.", {"url": url}),
+                            status=status.HTTP_200_OK)
+
+        except Week.DoesNotExist:
+            return Response(format_response(False, "Week with id not found."), status=status.HTTP_404_NOT_FOUND)
+
+
+class VideoSaveView(APIView):
+    @swagger_auto_schema(
+        request_body=MediaSaveSerializer,
+        responses={200: openapi.Response('Video saved successfully')}
+    )
+    def post(self, request):
+        week_id = request.data.get('week')
+        url = request.data.get('url')
+
+        if not url.endswith(('mp4', 'avi', 'mov')):
+            return Response(format_response(False, "You must provide a valid video URL."),
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            week = Week.objects.get(id=week_id)
+            # Delete any existing video for this week
+            delete_existing_media(week)
+
+            # Save new video URL
+            Media.objects.create(week=week, url=url)
+
+            return Response(format_response(True, "Video saved successfully."),
                             status=status.HTTP_201_CREATED)
 
         except Week.DoesNotExist:
@@ -335,14 +372,10 @@ class DoctorFeedbackCreateView(APIView):
 class DoctorVoiceRecordsListView(APIView):
     @swagger_auto_schema(
         manual_parameters=[
-            openapi.Parameter('week_id', openapi.IN_QUERY, description="Week ID", type=openapi.TYPE_INTEGER)]
+            openapi.Parameter('week_id', openapi.IN_PATH, description="Week ID", type=openapi.TYPE_INTEGER)
+        ]
     )
-    def get(self, request):
-        week_id = request.GET.get('week_id')
-
-        if not week_id:
-            return Response(format_response(False, "week_id is required."), status=status.HTTP_400_BAD_REQUEST)
-
+    def get(self, request, week_id):
         try:
             week = Week.objects.get(id=week_id)
             voice_records = KidVoiceRecording.objects.filter(week=week)
